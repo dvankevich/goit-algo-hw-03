@@ -19,7 +19,7 @@ def main():
     dst_path = Path(args.dstdir)
 
     print(src_path.absolute(), dst_path.absolute())
-    print(dst_path.absolute().is_relative_to(src_path.absolute()))
+    # print(dst_path.absolute().is_relative_to(src_path.absolute()))
 
 
     if src_path.absolute() == dst_path.absolute():
@@ -29,6 +29,30 @@ def main():
     if dst_path.absolute().is_relative_to(src_path.absolute()):
         print(f'{dst_path} cannot be inside {src_path.absolute()}')
         sys.exit(1) # 1 Operation not permitted
+
+    if not src_path.exists():
+        print(f'{src_path} not exist')
+        sys.exit(2) # 2 No such file or directory
+
+    if not src_path.is_dir():
+        print(f'{src_path} is not a directory')
+        sys.exit(20) # 20 Not a directory
+
+    if not dst_path.exists():
+        print(f'{dst_path} not exist')
+        sys.exit(2) # 2 No such file or directory
+
+    if not dst_path.is_dir():
+        print(f'{dst_path} is not a directory')
+        sys.exit(20) # 20 Not a directory
+
+    # print(list(dst_path.iterdir()))
+    # print(any(dst_path.iterdir()))
+
+    if any(dst_path.iterdir()):
+        print(f'{dst_path} is not empty')
+        sys.exit(39) # 39 Directory not empty
+
 
     print(f'copy files from directory {src_path.absolute()} to directory {dst_path.absolute()}')
 
