@@ -1,7 +1,7 @@
-import os
 import sys
 import argparse
 from pathlib import Path
+import shutil
 import errno
 
 def check_paths(src_path, dst_path):
@@ -24,23 +24,54 @@ def validate_destination(dst_path):
 
     if dst_path.exists() and any(dst_path.iterdir()):
         raise OSError(errno.ENOTEMPTY, f'{dst_path} is not empty')
+    
+def copy_file(src:Path, dst:Path, verbose):
+    file_name = src.name
+    file_ext = src.suffix[1:]
+    dir_name = src.parent
+    # create destination path
+    dst_dir = dst / file_ext / Path(*dir_name.parts[1:]) # remove source dirname
+    # create destination dir if is not exist
+    if dst_dir.exists():
+        if dst_dir.is_file():
+            raise ValueError(f"Error: '{dst_dir}' is a file, not a directory.")
+    else:
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        if verbose:
+            print("create directory",dst_dir, dst_dir.absolute())
+
+    dst_file = dst_dir / file_name
+
+    if verbose:
+        print(f'copy {src.absolute()} to {dst_file.absolute()}')
+
+    shutil.copy(src, dst_file)
+    
+def copy_dir(srcdir:Path, dstdir:Path, verbose):
+    for path in srcdir.iterdir():
+        if path.is_dir():
+            copy_dir(path, dstdir, verbose)
+        else:
+            copy_file(path, dstdir, verbose)
 
 def main():
     parser = argparse.ArgumentParser(description='Recursive file copier.')
     parser.add_argument('srcdir', type=str, help='source dir')
     parser.add_argument('-d', '--dstdir', type=str, default='dist', help='destination dir. dist for default')
+    parser.add_argument('-v', '--verbose', action='store_true', help='enable verbose output')
     
     parser.epilog = f'Example usage:\n  python {parser.prog} source_dir -d <destination_dir>\n'
 
     args = parser.parse_args()
-
     src_path = Path(args.srcdir)
     dst_path = Path(args.dstdir)
+    verbose = args.verbose
 
     try:
         check_paths(src_path, dst_path)
         validate_source(src_path)
         validate_destination(dst_path)
+        copy_dir(src_path, dst_path, verbose)
     except ValueError as ve:
         print(ve)
         sys.exit(1)
@@ -53,8 +84,6 @@ def main():
     except OSError as oe:
         print(oe)
         sys.exit(oe.errno) 
-
-    print(f'Copy files from directory {src_path.absolute()} to directory {dst_path.absolute()}')
 
 if __name__ == "__main__":
     main()
